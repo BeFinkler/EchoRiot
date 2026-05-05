@@ -4,6 +4,8 @@ const ctrl = require('../controllers/playlistController');
 
 router.post('/', auth, ctrl.create);
 router.get('/', auth, ctrl.getAll);
+router.put('/:id', auth, ctrl.update);
+router.get('/stats', auth, ctrl.getStats);
 router.post('/:id/songs', auth, ctrl.addSong);
 router.delete('/:id/songs/:songIndex', auth, ctrl.deleteSong);
 router.delete('/:id', auth, ctrl.delete);

@@ -14,8 +14,63 @@ exports.create = async (req, res) => {
 
 exports.getAll = async (req, res) => {
   try {
-    const playlists = await Playlist.find({ owner: req.user.id });
+    const { search, sort = 'createdAt', order = 'desc' } = req.query;
+    let query = { owner: req.user.id };
+
+    // Sistema de busca
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    const playlists = await Playlist.find(query)
+      .sort({ [sort]: order === 'desc' ? -1 : 1 })
+      .populate('owner', 'name');
+
     res.json(playlists);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.update = async (req, res) => {
+  try {
+    const playlist = await Playlist.findById(req.params.id);
+
+    if (!playlist) {
+      return res.status(404).json({ msg: 'Playlist não encontrada' });
+    }
+
+    if (playlist.owner.toString() !== req.user.id) {
+      return res.status(403).json({ msg: 'Você não tem permissão para editar esta playlist' });
+    }
+
+    const { name, description } = req.body;
+    playlist.name = name || playlist.name;
+    playlist.description = description !== undefined ? description : playlist.description;
+
+    await playlist.save();
+    res.json(playlist);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.getStats = async (req, res) => {
+  try {
+    const userPlaylists = await Playlist.find({ owner: req.user.id });
+
+    const stats = {
+      totalPlaylists: userPlaylists.length,
+      totalSongs: userPlaylists.reduce((sum, p) => sum + p.songs.length, 0),
+      recentPlaylists: userPlaylists.filter(p =>
+        new Date(p.createdAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+      ).length
+    };
+
+    res.json(stats);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -62,7 +117,6 @@ exports.like = async (req, res) => {
 };
 
 exports.deleteSong = async (req, res) => {
-  console.log('DELETE SONG called:', req.params);
   try {
     const playlist = await Playlist.findById(req.params.id);
 
@@ -89,7 +143,6 @@ exports.deleteSong = async (req, res) => {
 };
 
 exports.delete = async (req, res) => {
-  console.log('DELETE PLAYLIST called:', req.params);
   try {
     const playlist = await Playlist.findById(req.params.id);
 
