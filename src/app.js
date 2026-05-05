@@ -28,6 +28,12 @@ app.use(helmet({
 // Logging
 app.use(morgan('combined'));
 
+// Debug middleware - log all requests
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.path} - Headers:`, req.headers.authorization ? 'Token present' : 'No token');
+  next();
+});
+
 // CORS
 app.use(cors());
 
@@ -57,6 +63,12 @@ app.get('/login', (req, res) => {
 
 app.get('/register', (req, res) => {
   res.render('register');
+});
+
+// Catch-all route for debugging
+app.use((req, res) => {
+  console.log(`CATCH-ALL: ${req.method} ${req.path} not found`);
+  res.status(404).json({ msg: 'Rota não encontrada' });
 });
 
 // Middleware de erro 404
