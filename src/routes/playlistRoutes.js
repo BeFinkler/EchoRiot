@@ -19,9 +19,9 @@ const ctrl = require('../controllers/playlistController');
  *           schema:
  *             type: object
  *             required:
- *               - title
+ *               - name
  *             properties:
- *               title:
+ *               name:
  *                 type: string
  *                 example: Minha Playlist Rock
  *               description:
@@ -37,16 +37,16 @@ const ctrl = require('../controllers/playlistController');
  *               properties:
  *                 _id:
  *                   type: string
- *                 title:
+ *                 name:
  *                   type: string
  *                 description:
  *                   type: string
- *                 userId:
+ *                 owner:
  *                   type: string
  *                 songs:
  *                   type: array
  *                 likes:
- *                   type: integer
+ *                   type: array
  *       400:
  *         description: Dados inválidos
  *       401:
@@ -76,16 +76,16 @@ router.post('/', auth, ctrl.create);
  *                 properties:
  *                   _id:
  *                     type: string
- *                   title:
+ *                   name:
  *                     type: string
  *                   description:
  *                     type: string
- *                   userId:
+ *                   owner:
  *                     type: string
  *                   songs:
  *                     type: array
  *                   likes:
- *                     type: integer
+ *                     type: array
  *       401:
  *         description: Não autenticado
  */
@@ -115,7 +115,7 @@ router.get('/', auth, ctrl.getAll);
  *           schema:
  *             type: object
  *             properties:
- *               title:
+ *               name:
  *                 type: string
  *                 example: Playlist Atualizada
  *               description:
@@ -131,7 +131,7 @@ router.get('/', auth, ctrl.getAll);
  *               properties:
  *                 _id:
  *                   type: string
- *                 title:
+ *                 name:
  *                   type: string
  *                 description:
  *                   type: string
