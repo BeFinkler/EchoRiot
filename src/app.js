@@ -5,9 +5,49 @@ const path = require('path');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const cors = require('cors');
+const swaggerUi = require('swagger-ui-express');
+const swaggerJsdoc = require('swagger-jsdoc');
 const connectDB = require('./config/db');
 
 const app = express();
+
+// Configuração do Swagger
+const swaggerOptions = {
+  definition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'EchoRiot API',
+      version: '1.0.0',
+      description: 'API REST para gerenciamento de playlists e autenticação de usuários',
+      contact: {
+        name: 'EchoRiot',
+        url: 'https://github.com/yourusername/EchoRiot',
+      },
+    },
+    servers: [
+      {
+        url: 'http://localhost:5000',
+        description: 'Servidor de desenvolvimento',
+      },
+      {
+        url: 'http://localhost:3000',
+        description: 'Servidor alternativo',
+      },
+    ],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+        },
+      },
+    },
+  },
+  apis: ['./src/routes/*.js', './src/app.js'],
+};
+
+const swaggerSpec = swaggerJsdoc(swaggerOptions);
 
 // Conectar ao MongoDB
 connectDB();
@@ -41,6 +81,11 @@ app.set('views', path.join(__dirname, 'views'));
 
 // Arquivos estáticos
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Documentação Swagger
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  customCss: '.swagger-ui .topbar { display: none }',
+}));
 
 // Rotas da API
 app.use('/api/auth', require('./routes/authRoutes'));
