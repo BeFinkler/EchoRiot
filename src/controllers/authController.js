@@ -1,38 +1,56 @@
-const User = require('../models/User');
-const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const usuarioModel = require('../models/usuarioModel');
 
 exports.register = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { nome, nick, senha } = req.body;
 
-    const exists = await User.findOne({ email });
-    if (exists) return res.status(400).json({ msg: 'Usuário já existe' });
+    if (!nome || !nick || !senha) {
+      return res.status(400).json({ msg: 'Nome, nick e senha sao obrigatorios' });
+    }
 
-    const hash = await bcrypt.hash(password, 10);
+    const usuarioExistente = await usuarioModel.findByNick(nick);
+    if (usuarioExistente) {
+      return res.status(400).json({ msg: 'Usuario ja existe' });
+    }
 
-    const user = await User.create({ name, email, password: hash });
-
-    res.json(user);
+    const usuario = await usuarioModel.create({ nome, nick, senha });
+    return res.status(201).json(usuario);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: err.message });
   }
 };
 
 exports.login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const nick = req.body.nick || req.body.email;
+    const senha = req.body.senha || req.body.password;
 
-    const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ msg: 'Usuário não encontrado' });
+    if (!nick || !senha) {
+      return res.status(400).json({ msg: 'Nick e senha sao obrigatorios' });
+    }
 
-    const match = await bcrypt.compare(password, user.password);
-    if (!match) return res.status(400).json({ msg: 'Senha inválida' });
+    const usuario = await usuarioModel.findByNick(nick);
+    if (!usuario || usuario.senha !== usuarioModel.hashSenha(senha)) {
+      return res.status(401).json({ msg: 'Credenciais invalidas' });
+    }
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
+    const payload = {
+      id_usuario: usuario.id_usuario,
+      nick: usuario.nick,
+    };
 
-    res.json({ token });
+    const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '2h' });
+
+    return res.json({
+      token,
+      usuario: {
+        id_usuario: usuario.id_usuario,
+        nome: usuario.nome,
+        nick: usuario.nick,
+      },
+    });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: err.message });
   }
 };

@@ -1,22 +1,31 @@
 const jwt = require('jsonwebtoken');
 
 module.exports = (req, res, next) => {
-  const authHeader = req.header('Authorization');
+  const authHeader = req.headers.authorization;
+  const userIdHeader = req.headers['x-user-id'];
 
   if (!authHeader) {
-    return res.status(401).json({ msg: 'Token não fornecido' });
+    return res.status(401).json({ msg: 'Token nao fornecido' });
   }
 
-  // Suporta tanto "token" quanto "Bearer token"
-  const token = authHeader.startsWith('Bearer ') 
-    ? authHeader.slice(7) 
+  if (!userIdHeader) {
+    return res.status(401).json({ msg: 'ID do usuario nao fornecido' });
+  }
+
+  const token = authHeader.startsWith('Bearer ')
+    ? authHeader.slice(7)
     : authHeader;
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    if (!decoded.id_usuario || String(decoded.id_usuario) !== String(userIdHeader)) {
+      return res.status(403).json({ msg: 'ID do usuario nao confere com o token' });
+    }
+
     req.user = decoded;
     next();
   } catch (err) {
-    res.status(401).json({ msg: 'Token inválido' });
+    return res.status(401).json({ msg: 'Token invalido' });
   }
 };
