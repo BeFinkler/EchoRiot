@@ -1,155 +1,274 @@
-# EchoRiot
+# API de Vendas
 
-EchoRiot é uma aplicação web de gerenciamento de playlists musicais com autenticação de usuário. O projeto usa Node.js, Express, MongoDB e EJS para renderização do frontend.
+API REST para gerenciamento de vendas usando Node.js, Express e MySQL.
 
-## 🌟 Funcionalidades
+O projeto foi refatorado para remover views, arquivos estaticos e persistencia NoSQL. Agora a aplicacao trabalha apenas como API, com autenticacao JWT e acesso ao banco relacional `loja`.
 
-- Cadastro e login de usuário com autenticação JWT
-- Criação de playlists com nome e descrição
-- Adição e remoção de músicas em playlists
-- Edição de nome e descrição das playlists
-- Busca e ordenação de playlists
-- Painel de estatísticas de playlists e músicas
-- Interface responsiva com Bootstrap 5
+## Funcionalidades
 
-## 🧰 Stack
+- Rota publica de status da API.
+- Login com usuario salvo no MySQL.
+- CRUD de categorias.
+- CRUD de produtos.
+- CRUD de clientes.
+- CRUD de pedidos/vendas.
+- Protecao das rotas privadas com token JWT e `x-user-id`.
+- Queries SQL com prepared statements usando `?`.
+
+## Tecnologias
 
 - Node.js
 - Express
-- MongoDB / Mongoose
-- EJS
-- Bootstrap 5
+- MySQL
+- mysql2/promise
 - JWT
-- bcrypt
 - dotenv
+- helmet
+- cors
 
-## 🚀 Pré-requisitos
+## Como rodar
 
-Antes de rodar o projeto, instale:
-
-- Node.js 18+ ou superior
-- npm (vem com Node.js)
-- MongoDB local ou MongoDB Atlas
-
-## 🔧 Instalação
-
-1. Clone o repositório:
-
-```bash
-git clone https://github.com/SEU_USUARIO/EchoRiot.git
-cd EchoRiot
-```
-
-2. Instale dependências:
+Instale as dependencias:
 
 ```bash
 npm install
 ```
 
-3. Crie um arquivo `.env` na raiz do projeto com as variáveis abaixo:
+Configure o arquivo `.env` na raiz do projeto:
 
 ```env
 PORT=5000
-MONGO_URI=mongodb://localhost:27017/echoriot
-JWT_SECRET=SUA_CHAVE_SECRETA
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=sua_senha_mysql
+DB_NAME=loja
+JWT_SECRET=123456
 ```
 
-> Se usar MongoDB Atlas, substitua `MONGO_URI` pela URL fornecida pelo Atlas.
+Importe o banco MySQL. O projeto possui um script base em:
 
-## 🗄️ Configurando o MongoDB
-
-### Opção 1: MongoDB local
-
-- Garanta que o serviço do MongoDB esteja rodando.
-- Use o endereço padrão:
-
-```env
-MONGO_URI=mongodb://localhost:27017/echoriot
+```txt
+database/loja.sql
 ```
 
-### Opção 2: MongoDB Atlas
+Tambem pode ser usado o dump fornecido pelo professor, desde que ele tenha as tabelas `categorias`, `clientes`, `produtos`, `pedidos`, `produtos_pedidos` e `usuarios`.
 
-- Crie uma conta em https://www.mongodb.com/cloud/atlas
-- Crie um cluster gratuito
-- Crie um database user com permissão de leitura e escrita
-- Copie a string de conexão e substitua no `.env`
-
-Exemplo:
-
-```env
-MONGO_URI=mongodb+srv://usuario:senha@cluster0.mongodb.net/echoriot?retryWrites=true&w=majority
-```
-
-## ▶️ Executando a aplicação
-
-### Modo de desenvolvimento
-
-```bash
-npm run dev
-```
-
-### Modo de produção
+Depois rode a API:
 
 ```bash
 npm start
 ```
 
-O servidor rodará em `http://localhost:5000` por padrão.
+Ou em modo desenvolvimento:
 
-## 📁 Estrutura do projeto
-
+```bash
+npm run dev
 ```
+
+A API roda por padrao em:
+
+```txt
+http://localhost:5000
+```
+
+## Rotas publicas
+
+```http
+GET /api/status
+GET /api/versao
+```
+
+Resposta esperada:
+
+```json
+{
+  "versao": "2.0.0",
+  "status": "online"
+}
+```
+
+## Login
+
+```http
+POST /api/auth/login
+```
+
+Body:
+
+```json
+{
+  "nick": "candido",
+  "senha": "123456"
+}
+```
+
+Resposta:
+
+```json
+{
+  "token": "token_jwt",
+  "usuario": {
+    "id_usuario": 1,
+    "nome": "Candido Farias",
+    "nick": "candido"
+  }
+}
+```
+
+## Rotas privadas
+
+Todas as rotas de CRUD precisam dos headers:
+
+```http
+Authorization: Bearer SEU_TOKEN
+x-user-id: 1
+Content-Type: application/json
+```
+
+Se o token nao for enviado, a API retorna `401`.
+
+Se o `x-user-id` nao for enviado ou nao bater com o ID do token, a API retorna `401` ou `403`.
+
+## Categorias
+
+```http
+GET /api/categorias
+GET /api/categorias/:id
+POST /api/categorias
+PUT /api/categorias/:id
+DELETE /api/categorias/:id
+```
+
+Exemplo de criacao:
+
+```json
+{
+  "nome": "Perifericos"
+}
+```
+
+## Produtos
+
+```http
+GET /api/produtos
+GET /api/produtos/:id
+POST /api/produtos
+PUT /api/produtos/:id
+DELETE /api/produtos/:id
+```
+
+Exemplo de criacao:
+
+```json
+{
+  "nome": "Mouse Gamer",
+  "valor": 120.5,
+  "estoque": 10,
+  "id_categoria": 5
+}
+```
+
+O `id_categoria` precisa existir na tabela `categorias`.
+
+## Clientes
+
+```http
+GET /api/clientes
+GET /api/clientes/:id
+POST /api/clientes
+PUT /api/clientes/:id
+DELETE /api/clientes/:id
+```
+
+Exemplo de criacao:
+
+```json
+{
+  "nome": "Cliente Teste",
+  "telefone": "51999999999",
+  "status": "bom"
+}
+```
+
+Status aceitos:
+
+```txt
+bom, medio, ruim
+```
+
+## Pedidos
+
+```http
+GET /api/pedidos
+GET /api/pedidos/:id
+POST /api/pedidos
+PUT /api/pedidos/:id
+DELETE /api/pedidos/:id
+```
+
+Exemplo de criacao:
+
+```json
+{
+  "data": "2026-07-01",
+  "id_cliente": 1,
+  "itens": [
+    {
+      "id_produto": 1,
+      "quantidade": 1,
+      "valor": 1259
+    }
+  ]
+}
+```
+
+O `id_cliente` precisa existir na tabela `clientes`.
+
+Cada `id_produto` precisa existir na tabela `produtos`.
+
+## Estrutura
+
+```txt
 src/
   app.js
   config/
-    db.js
+    database.js
   controllers/
     authController.js
-    playlistController.js
+    categoriaController.js
+    produtoController.js
+    clienteController.js
+    pedidoController.js
   middlewares/
     authMiddleware.js
   models/
-    Playlist.js
-    User.js
-  public/
-    css/
-      style.css
-    js/
-      main.js
+    usuarioModel.js
+    categoriaModel.js
+    produtoModel.js
+    clienteModel.js
+    pedidoModel.js
   routes/
+    apiRoutes.js
     authRoutes.js
-    playlistRoutes.js
-  views/
-    index.ejs
-    login.ejs
-    register.ejs
-package.json
-README.md
+    categoriaRoutes.js
+    produtosRoutes.js
+    clientesRoutes.js
+    pedidosRoutes.js
+database/
+  loja.sql
 ```
 
-## 🧪 Testando a aplicação
+## Sequencia sugerida para demonstracao
 
-1. Abra o browser em `http://localhost:5000`
-2. Crie uma conta ou faça login
-3. Crie playlists, adicione músicas e use a busca
+1. `GET /api/status`
+2. `GET /api/categorias` sem token para mostrar bloqueio `401`
+3. `POST /api/auth/login`
+4. `GET /api/categorias` com `Authorization` e `x-user-id`
+5. `POST /api/categorias` para criar uma categoria
+6. Conferir no MySQL:
 
-## 🌐 Rotas principais
-
-- `GET /` — página principal com playlists
-- `GET /login` — tela de login
-- `GET /register` — tela de cadastro
-- `POST /api/auth/register` — cadastrar usuário
-- `POST /api/auth/login` — autenticar usuário
-- `GET /api/playlists` — listar playlists do usuário
-- `POST /api/playlists` — criar playlist
-- `PUT /api/playlists/:id` — editar playlist
-- `DELETE /api/playlists/:id` — deletar playlist
-- `POST /api/playlists/:id/songs` — adicionar música
-- `DELETE /api/playlists/:id/songs/:songIndex` — remover música
-- `GET /api/playlists/stats` — estatísticas de playlists
-
-## 💡 Dicas
-
-- Use nomes claros para as playlists e músicas
-- Atualize o navegador ao criar novas playlists, se não aparecer imediatamente
-- Verifique se o token JWT está salvo no `localStorage` para acessar as rotas protegidas
+```sql
+USE loja;
+SELECT * FROM categorias;
+```
