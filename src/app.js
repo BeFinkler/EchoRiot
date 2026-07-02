@@ -4,13 +4,20 @@ const express = require('express');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const cors = require('cors');
+const swaggerUi = require('swagger-ui-express');
+const swaggerDocument = require('./config/swagger');
 
 const app = express();
 
-app.use(helmet());
+app.use(helmet({ contentSecurityPolicy: false }));
 app.use(morgan('combined'));
 app.use(cors());
 app.use(express.json());
+
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, {
+  customSiteTitle: 'EchoRiot API Docs',
+  customCss: '.swagger-ui .topbar { display: none }',
+}));
 
 app.use('/api', require('./routes/apiRoutes'));
 app.use('/api/auth', require('./routes/authRoutes'));
